@@ -1,0 +1,33 @@
+{
+  "name": "jenkins-cicd-demo",
+  "version": "1.0.0",
+  "description": "Simple app for Jenkins CI/CD demo pipeline with development, staging, and production stages.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "jest --runInBand --coverage",
+    "lint": "eslint src test",
+    "smoke:dev": "node scripts/smoke.js http://localhost:3001/health",
+    "smoke:staging": "node scripts/smoke.js http://localhost:3002/health",
+    "smoke:prod": "node scripts/smoke.js http://localhost:3003/health"
+  },
+  "dependencies": {
+    "express": "4.18.3"
+  },
+  "devDependencies": {
+    "eslint": "8.57.0",
+    "jest": "29.7.0",
+    "supertest": "6.3.4"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "coverageThreshold": {
+      "global": {
+        "branches": 60,
+        "functions": 70,
+        "lines": 70,
+        "statements": 70
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+services:
+  demo-app-prod:
+    image: ${IMAGE_NAME}:${IMAGE_TAG}
+    container_name: demo-app-prod
+    environment:
+      APP_ENV: production
+      APP_VERSION: ${IMAGE_TAG}
+      PORT: 3000
+    ports:
+      - "3003:3000"
+    restart: unless-stopped

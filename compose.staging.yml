@@ -1,0 +1,11 @@
+services:
+  demo-app-staging:
+    image: ${IMAGE_NAME}:${IMAGE_TAG}
+    container_name: demo-app-staging
+    environment:
+      APP_ENV: staging
+      APP_VERSION: ${IMAGE_TAG}
+      PORT: 3000
+    ports:
+      - "3002:3000"
+    restart: unless-stopped
