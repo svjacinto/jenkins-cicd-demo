@@ -207,8 +207,11 @@ pipeline {
           not { changeRequest() }
         }
       }
+      // steps {
+      //   sh 'npm run smoke:dev'
+      // }
       steps {
-        sh 'npm run smoke:dev'
+        sh 'node scripts/smoke.js http://host.docker.internal:3001/health'
       }
     }
 
