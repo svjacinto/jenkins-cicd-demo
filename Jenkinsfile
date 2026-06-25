@@ -8,7 +8,7 @@ pipeline {
   }
 
   parameters {
-    booleanParam(name: 'RUN_OPTIONAL_SECURITY', defaultValue: false, description: 'Run optional tools if installed: Gitleaks, Trivy, Semgrep, Hadolint, OWASP ZAP, k6')
+    booleanParam(name: 'RUN_OPTIONAL_SECURITY', defaultValue: true, description: 'Run optional tools if installed: Gitleaks, Trivy, Semgrep, Hadolint, OWASP ZAP, k6')
     booleanParam(name: 'DEPLOY_PRODUCTION', defaultValue: false, description: 'Allow production deployment after approval. Keep false for test runs.')
   }
 
@@ -167,9 +167,11 @@ pipeline {
           changeRequest target: 'staging'
           changeRequest target: 'main'
           changeRequest target: 'prod'
+          changeRequest target: 'develop'
           branch 'staging'
           branch 'main'
           branch 'prod'
+          branch 'develop'
         }
       }
       steps {

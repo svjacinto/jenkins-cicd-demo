@@ -3,6 +3,9 @@
 ```bash
 # Separate Docker folder
 
+# Delete is existing and has changes
+docker rm -f jenkins-cicd
+
 # Build Jenkins image
 docker build -t jenkins-node-docker .
 
@@ -29,6 +32,8 @@ root@9a1865cca09b:/# npm -v
 root@9a1865cca09b:/# docker version
 root@9a1865cca09b:/# docker compose version
 root@9a1865cca09b:/# exit
+
+docker exec jenkins-cicd syft version
 ```
 
 ```bash
