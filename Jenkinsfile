@@ -238,10 +238,17 @@ pipeline {
           not { changeRequest() }
         }
       }
+      // steps {
+      //   sh '''
+      //     node scripts/smoke.js http://localhost:3002/health
+      //     curl -fsS http://localhost:3002/ | tee staging-root-response.json
+      //   '''
+      //   archiveArtifacts artifacts: 'staging-root-response.json', fingerprint: true
+      // }
       steps {
         sh '''
-          node scripts/smoke.js http://localhost:3002/health
-          curl -fsS http://localhost:3002/ | tee staging-root-response.json
+          node scripts/smoke.js http://host.docker.internal:3002/health
+          curl -fsS http://host.docker.internal:3002/ | tee staging-root-response.json
         '''
         archiveArtifacts artifacts: 'staging-root-response.json', fingerprint: true
       }
@@ -254,11 +261,23 @@ pipeline {
           not { changeRequest() }
         }
       }
+      // steps {
+      //   sh '''
+      //     if [ "${RUN_OPTIONAL_SECURITY}" = "true" ] && command -v docker >/dev/null 2>&1; then
+      //       docker run --rm --network host -v "$(pwd):/zap/wrk/:rw" ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+      //         -t http://localhost:3002 \
+      //         -r zap-staging-report.html || true
+      //     else
+      //       echo "Skipping OWASP ZAP. Set RUN_OPTIONAL_SECURITY=true to enable."
+      //     fi
+      //   '''
+      //   archiveArtifacts artifacts: 'zap-staging-report.html', allowEmptyArchive: true, fingerprint: true
+      // }
       steps {
         sh '''
           if [ "${RUN_OPTIONAL_SECURITY}" = "true" ] && command -v docker >/dev/null 2>&1; then
-            docker run --rm --network host -v "$(pwd):/zap/wrk/:rw" ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
-              -t http://localhost:3002 \
+            docker run --rm -v "$(pwd):/zap/wrk/:rw" ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+              -t http://host.docker.internal:3002 \
               -r zap-staging-report.html || true
           else
             echo "Skipping OWASP ZAP. Set RUN_OPTIONAL_SECURITY=true to enable."
@@ -293,8 +312,11 @@ pipeline {
           not { changeRequest() }
         }
       }
+      // steps {
+      //   sh 'npm run smoke:staging'
+      // }
       steps {
-        sh 'npm run smoke:staging'
+        sh 'node scripts/smoke.js http://host.docker.internal:3002/health'
       }
     }
 
