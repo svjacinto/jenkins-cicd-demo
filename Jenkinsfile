@@ -8,7 +8,7 @@ pipeline {
   }
 
   parameters {
-    booleanParam(name: 'RUN_OPTIONAL_SECURITY', defaultValue: false, description: 'Run optional tools if installed: Gitleaks, Trivy, Semgrep, Hadolint, OWASP ZAP, k6')
+    booleanParam(name: 'RUN_OPTIONAL_SECURITY', defaultValue: true, description: 'Run optional tools if installed: Gitleaks, Trivy, Semgrep, Hadolint, OWASP ZAP, k6')
     booleanParam(name: 'DEPLOY_PRODUCTION', defaultValue: false, description: 'Allow production deployment after approval. Keep false for test runs.')
   }
 
@@ -75,8 +75,11 @@ pipeline {
     }
 
     stage('CI - Unit Tests with Coverage') {
+      // steps {
+      //   sh 'npm test -- --ci --coverage --coverageReporters=text --coverageReporters=cobertura'
+      // }
       steps {
-        sh 'npm test -- --ci --coverage --coverageReporters=text --coverageReporters=cobertura'
+        sh 'npm test'
       }
       post {
         always {
@@ -90,11 +93,16 @@ pipeline {
       steps {
         sh '''
           if [ "${RUN_OPTIONAL_SECURITY}" = "true" ] && command -v trivy >/dev/null 2>&1; then
-            trivy fs --severity HIGH,CRITICAL --exit-code 1 --format table .
+            trivy fs --severity HIGH,CRITICAL --exit-code 1 --format table --output trivy-dependency-report.txt .
           else
-            echo "Skipping Trivy filesystem scan. Set RUN_OPTIONAL_SECURITY=true and install trivy to enable."
+            echo "Skipping Trivy filesystem scan. Set RUN_OPTIONAL_SECURITY=true and install trivy to enable." | tee trivy-dependency-report.txt
           fi
         '''
+      }
+      post {
+        always {
+          archiveArtifacts artifacts: 'trivy-dependency-report.txt', allowEmptyArchive: true, fingerprint: true
+        }
       }
     }
 
@@ -167,9 +175,11 @@ pipeline {
           changeRequest target: 'staging'
           changeRequest target: 'main'
           changeRequest target: 'prod'
+          changeRequest target: 'develop'
           branch 'staging'
           branch 'main'
           branch 'prod'
+          branch 'develop'
         }
       }
       steps {
@@ -207,8 +217,11 @@ pipeline {
           not { changeRequest() }
         }
       }
+      // steps {
+      //   sh 'npm run smoke:dev'
+      // }
       steps {
-        sh 'npm run smoke:dev'
+        sh 'node scripts/smoke.js http://host.docker.internal:3001/health'
       }
     }
 
@@ -235,10 +248,17 @@ pipeline {
           not { changeRequest() }
         }
       }
+      // steps {
+      //   sh '''
+      //     node scripts/smoke.js http://localhost:3002/health
+      //     curl -fsS http://localhost:3002/ | tee staging-root-response.json
+      //   '''
+      //   archiveArtifacts artifacts: 'staging-root-response.json', fingerprint: true
+      // }
       steps {
         sh '''
-          node scripts/smoke.js http://localhost:3002/health
-          curl -fsS http://localhost:3002/ | tee staging-root-response.json
+          node scripts/smoke.js http://host.docker.internal:3002/health
+          curl -fsS http://host.docker.internal:3002/ | tee staging-root-response.json
         '''
         archiveArtifacts artifacts: 'staging-root-response.json', fingerprint: true
       }
@@ -251,11 +271,23 @@ pipeline {
           not { changeRequest() }
         }
       }
+      // steps {
+      //   sh '''
+      //     if [ "${RUN_OPTIONAL_SECURITY}" = "true" ] && command -v docker >/dev/null 2>&1; then
+      //       docker run --rm --network host -v "$(pwd):/zap/wrk/:rw" ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+      //         -t http://localhost:3002 \
+      //         -r zap-staging-report.html || true
+      //     else
+      //       echo "Skipping OWASP ZAP. Set RUN_OPTIONAL_SECURITY=true to enable."
+      //     fi
+      //   '''
+      //   archiveArtifacts artifacts: 'zap-staging-report.html', allowEmptyArchive: true, fingerprint: true
+      // }
       steps {
         sh '''
           if [ "${RUN_OPTIONAL_SECURITY}" = "true" ] && command -v docker >/dev/null 2>&1; then
-            docker run --rm --network host -v "$(pwd):/zap/wrk/:rw" ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
-              -t http://localhost:3002 \
+            docker run --rm -v "$(pwd):/zap/wrk/:rw" ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+              -t http://host.docker.internal:3002 \
               -r zap-staging-report.html || true
           else
             echo "Skipping OWASP ZAP. Set RUN_OPTIONAL_SECURITY=true to enable."
@@ -275,7 +307,7 @@ pipeline {
       steps {
         sh '''
           if [ "${RUN_OPTIONAL_SECURITY}" = "true" ] && command -v k6 >/dev/null 2>&1; then
-            k6 run scripts/k6-smoke.js
+            BASE_URL=http://host.docker.internal:3002 k6 run scripts/k6-smoke.js
           else
             echo "Skipping k6. Set RUN_OPTIONAL_SECURITY=true and install k6 to enable."
           fi
@@ -290,8 +322,11 @@ pipeline {
           not { changeRequest() }
         }
       }
+      // steps {
+      //   sh 'npm run smoke:staging'
+      // }
       steps {
-        sh 'npm run smoke:staging'
+        sh 'node scripts/smoke.js http://host.docker.internal:3002/health'
       }
     }
 
