@@ -307,7 +307,7 @@ pipeline {
       steps {
         sh '''
           if [ "${RUN_OPTIONAL_SECURITY}" = "true" ] && command -v k6 >/dev/null 2>&1; then
-            k6 run scripts/k6-smoke.js
+            BASE_URL=http://host.docker.internal:3002 k6 run scripts/k6-smoke.js
           else
             echo "Skipping k6. Set RUN_OPTIONAL_SECURITY=true and install k6 to enable."
           fi
