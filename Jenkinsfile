@@ -90,11 +90,16 @@ pipeline {
       steps {
         sh '''
           if [ "${RUN_OPTIONAL_SECURITY}" = "true" ] && command -v trivy >/dev/null 2>&1; then
-            trivy fs --severity HIGH,CRITICAL --exit-code 1 --format table .
+            trivy fs --severity HIGH,CRITICAL --exit-code 1 --format table --output trivy-dependency-report.txt .
           else
-            echo "Skipping Trivy filesystem scan. Set RUN_OPTIONAL_SECURITY=true and install trivy to enable."
+            echo "Skipping Trivy filesystem scan. Set RUN_OPTIONAL_SECURITY=true and install trivy to enable." | tee trivy-dependency-report.txt
           fi
         '''
+      }
+      post {
+        always {
+          archiveArtifacts artifacts: 'trivy-dependency-report.txt', allowEmptyArchive: true, fingerprint: true
+        }
       }
     }
 
