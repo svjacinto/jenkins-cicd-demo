@@ -64,4 +64,6 @@ git push
 
 # Run trivy dependency scan
 MSYS_NO_PATHCONV=1 docker run --rm -v "$(pwd -W):/project" aquasec/trivy fs --severity HIGH,CRITICAL --exit-code 1 --format table /project | tee trivy-dependency-report.txt
+
+MSYS_NO_PATHCONV=1 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image --severity HIGH,CRITICAL --exit-code 1 --format table jenkins-cicd-demo:test
 ```
