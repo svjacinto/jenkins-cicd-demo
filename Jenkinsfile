@@ -79,7 +79,7 @@ pipeline {
       //   sh 'npm test -- --ci --coverage --coverageReporters=text --coverageReporters=cobertura'
       // }
       steps {
-        sh 'npx jest --runInBand --ci --coverage --coverageReporters=text --coverageReporters=cobertura'
+        sh 'npm test'
       }
       post {
         always {
