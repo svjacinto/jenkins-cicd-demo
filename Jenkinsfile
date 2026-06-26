@@ -75,8 +75,11 @@ pipeline {
     }
 
     stage('CI - Unit Tests with Coverage') {
+      // steps {
+      //   sh 'npm test -- --ci --coverage --coverageReporters=text --coverageReporters=cobertura'
+      // }
       steps {
-        sh 'npm test -- --ci --coverage --coverageReporters=text --coverageReporters=cobertura'
+        sh 'npx jest --runInBand --ci --coverage --coverageReporters=text --coverageReporters=cobertura'
       }
       post {
         always {
