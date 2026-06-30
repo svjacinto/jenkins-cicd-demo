@@ -34,6 +34,20 @@ root@9a1865cca09b:/# docker compose version
 root@9a1865cca09b:/# exit
 
 docker exec jenkins-cicd syft version
+
+# New Node/Agent
+docker run -d --name jenkins-agent-1 --network jenkins -v //var/run/docker.sock:/var/run/docker.sock -v jenkins-agent-1-workdir:/home/jenkins/agent jenkins/inbound-agent -url http://jenkins-cicd:8080 -secret YOUR_AGENT_SECRET -name agent-1 -workDir /home/jenkins/agent
+
+docker run -d --name jenkins-agent-1 --network jenkins -v //var/run/docker.sock:/var/run/docker.sock -v jenkins-agent-1-workdir:/home/jenkins/agent jenkins/inbound-agent -url http://jenkins-cicd:8080 -secret 736401cdb71c638207057a195f3ca2a740fd84caabe71ccd37e370a5d1b73e97 -name agent-1 -workDir /home/jenkins/agent
+
+# Create Network
+docker network create jenkins
+
+# Connect the Jenkins server
+docker network connect jenkins jenkins-cicd
+
+# Check the Jenkins container
+docker inspect jenkins-cicd --format '{{json .NetworkSettings.Networks}}'
 ```
 
 ```bash
