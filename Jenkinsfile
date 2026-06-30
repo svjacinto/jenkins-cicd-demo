@@ -19,22 +19,6 @@ pipeline {
   }
 
   stages {
-    stage('Show Agent Info') {
-      steps {
-        echo "Running on node: ${env.NODE_NAME}"
-        echo "Workspace: ${env.WORKSPACE}"
-        echo "EXECUTOR_NUMBER: ${env.EXECUTOR_NUMBER}"
-
-        sh '''
-          echo "Hostname: $(hostname)"
-          echo "User: $(whoami)"
-          echo "Current directory: $(pwd)"
-        '''
-      }
-    }
-  }
-
-  stages {
     stage('Detect Pipeline Type') {
       steps {
         script {
@@ -47,6 +31,20 @@ pipeline {
           echo "Is PR: ${env.IS_PR}"
           echo "Image: ${env.IMAGE_NAME}:${env.IMAGE_TAG}"
         }
+      }
+    }
+
+    stage('Show Agent Info') {
+      steps {
+        echo "Running on node: ${env.NODE_NAME}"
+        echo "Workspace: ${env.WORKSPACE}"
+        echo "EXECUTOR_NUMBER: ${env.EXECUTOR_NUMBER}"
+
+        sh '''
+          echo "Hostname: $(hostname)"
+          echo "User: $(whoami)"
+          echo "Current directory: $(pwd)"
+        '''
       }
     }
 
