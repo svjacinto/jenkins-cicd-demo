@@ -70,3 +70,5 @@ docker build --no-cache -t jenkins-cicd-demo:test .
 
 MSYS_NO_PATHCONV=1 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image --severity HIGH,CRITICAL --exit-code 1 --format table jenkins-cicd-demo:test
 ```
+
+test
