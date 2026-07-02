@@ -69,12 +69,8 @@ pipeline{
         stage('CI - Secret Scan') {
             steps {
                 sh '''
-                    if command -v gitleaks >/dev/null 2>&1; then
-                        echo "Running Gitleaks secret scan..."
-                        gitleaks detect --source . --redact --exit-code 1
-                    else
-                        echo "Skipping Gitleaks. Install gitleaks to enable."
-                    fi
+                    echo "Running Secret Scan using gitleaks-secret-scanner..."
+                    npx gitleaks-secret-scanner
                 '''
             }
         }
@@ -82,12 +78,8 @@ pipeline{
         stage('CI - SAST') {
             steps {
                 sh '''
-                    if command -v semgrep >/dev/null 2>&1; then
-                        echo "Running Semgrep SAST scan..."
-                        semgrep scan --config auto .
-                    else
-                        echo "Skipping Semgrep. Install semgrep to enable."
-                    fi
+                    echo "Running Semgrep SAST scan..."
+                    npx semgrep scan --config auto .
                 '''
             }
         }
