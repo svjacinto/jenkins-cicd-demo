@@ -56,15 +56,36 @@ pipeline{
             }
         }
 
-        stage('Install dependencies') {
+        stage('CI - Install dependencies') {
             steps {
                 sh '''
                     npm ci
-                    npm install -g snyk
+                    npm install -g snyk semgrep
                     npm install gitleaks-secret-scanner --save-dev
+                '''
+            }
+        }
 
-                    snyk --version
-                    npx gitleaks-secret-scanner --help
+        stage('CI - Secret Scan') {
+            steps {
+                sh '''
+                if command -v gitleaks >/dev/null 2>&1; then
+                    gitleaks detect --source . --no-git --redact
+                else
+                    echo "Skipping Gitleaks. Install gitleaks to enable."
+                fi
+                '''
+            }
+        }
+
+        stage('CI - SAST') {
+            steps {
+                sh '''
+                if command -v semgrep >/dev/null 2>&1; then
+                    semgrep scan --config auto .
+                else
+                    echo "Skipping Semgrep. Install semgrep to enable."
+                fi
                 '''
             }
         }
