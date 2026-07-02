@@ -1,0 +1,73 @@
+pipeline{
+    agent {
+        label 'agent-1'
+    }
+
+    options {
+        timestamps()
+        disableConcurrentBuilds(abortPrevious: true)
+        buildDiscarder(logRotator(numToKeepStr: '20'))
+    }
+
+    environment {
+        APP_NAME = 'jenkins-cicd-demo'
+        IMAGE_NAME = 'jenkins-cicd-demo'
+    }
+
+    stages {
+        stage('Show Agent Info') {
+            steps {
+                echo "Running on node: ${env.NODE_NAME}"
+                echo "Workspace: ${env.WORKSPACE}"
+                echo "EXECUTOR_NUMBER: ${env.EXECUTOR_NUMBER}"
+
+                sh '''
+                echo "Hostname: $(hostname)"
+                echo "User: $(whoami)"
+                echo "Current directory: $(pwd)"
+                
+                echo "Java:"
+                java -version || true
+
+                echo "Node:"
+                node -v || true
+
+                echo "npm:"
+                npm -v || true
+
+                echo "Docker:"
+                docker --version || true
+                '''
+            }
+        }
+
+        stage('CI - Checkout') {
+            steps {
+                deleteDir()
+                cleanWs()
+                checkout scm
+
+                script {
+                    env.SHORT_COMMIT = env.GIT_COMMIT ? env.GIT_COMMIT.take(7) : 'local'
+                    env.IMAGE_TAG = "${env.BUILD_NUMBER}-${env.SHORT_COMMIT}"
+                }
+
+                echo "IMAGE_TAG: ${env.IMAGE_TAG}"
+            }
+        }
+
+        stage('Install dependencies') {
+            steps {
+                sh '''
+                    npm ci
+                    npm install -g snyk
+                    npm install gitleaks-secret-scanner --save-dev
+
+                    snyk --version
+                    npx gitleaks-secret-scanner --help
+                '''
+            }
+        }
+
+    }
+}

@@ -8,6 +8,7 @@ docker rm -f jenkins-cicd
 
 # Build Jenkins image
 docker build -t jenkins-node-docker .
+docker build -f Dockerfile.agent -t jenkins-agent-node-docker .
 
 # Rebuild Jenkins image
 docker build --no-cache -t jenkins-node-docker .
@@ -38,7 +39,13 @@ docker exec jenkins-cicd syft version
 # New Node/Agent
 docker run -d --name jenkins-agent-1 --network jenkins -v //var/run/docker.sock:/var/run/docker.sock -v jenkins-agent-1-workdir:/home/jenkins/agent jenkins/inbound-agent -url http://jenkins-cicd:8080 -secret YOUR_AGENT_SECRET -name agent-1 -workDir /home/jenkins/agent
 
-docker run -d --name jenkins-agent-1 --network jenkins -v //var/run/docker.sock:/var/run/docker.sock -v jenkins-agent-1-workdir:/home/jenkins/agent jenkins/inbound-agent -url http://jenkins-cicd:8080 -secret 736401cdb71c638207057a195f3ca2a740fd84caabe71ccd37e370a5d1b73e97 -name agent-1 -workDir /home/jenkins/agent
+docker run -d --name jenkins-agent-1 --user root --network jenkins -v //var/run/docker.sock:/var/run/docker.sock -v jenkins-agent-1-workdir:/home/jenkins/agent jenkins-agent-node-docker -url http://jenkins-cicd:8080 -secret 736401cdb71c638207057a195f3ca2a740fd84caabe71ccd37e370a5d1b73e97 -name agent-1 -webSocket -workDir /home/jenkins/agent
+
+# Run Agent via Docker (Bare)
+MSYS_NO_PATHCONV=1 docker run -d --name jenkins-agent-1 --user root --network jenkins -v //var/run/docker.sock:/var/run/docker.sock -v jenkins-agent-1-workdir:/home/jenkins/agent jenkins/agent:latest-jdk25 java -jar /usr/share/jenkins/agent.jar -url http://jenkins-cicd:8080 -secret 736401cdb71c638207057a195f3ca2a740fd84caabe71ccd37e370a5d1b73e97 -name agent-1 -webSocket -workDir /home/jenkins/agent
+
+# Check
+docker exec -it jenkins-agent-1 bash
 
 # Create Network
 docker network create jenkins
