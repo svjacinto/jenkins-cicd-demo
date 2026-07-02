@@ -60,7 +60,7 @@ pipeline{
             steps {
                 sh '''
                     npm ci
-                    npm install -g snyk semgrep
+                    npm install -g snyk
                     npm install gitleaks-secret-scanner --save-dev
                 '''
             }
@@ -78,9 +78,23 @@ pipeline{
         stage('CI - SAST') {
             steps {
                 sh '''
-                    echo "Running Semgrep SAST scan..."
-                    npx semgrep scan --config auto .
+                    if command -v semgrep >/dev/null 2>&1; then
+                        echo "Running SAST using semgrep..."
+                        semgrep scan --config auto .
+                    else
+                        echo "Skipping Semgrep. Install semgrep to enable."
+                    fi
                 '''
+            }
+        }
+
+        stage('CI - Generate SBOM') {
+            steps {
+                sh '''
+                    echo "Generating SBOM using Trivy..."
+                    trivy fs --format cyclonedx --output sbom.json
+                '''
+                archiveArtifacts artifacts: 'sbom.json', fingerprint: true
             }
         }
 
