@@ -97,45 +97,47 @@ pipeline{
                     fi
                 '''
                 archiveArtifacts artifacts: 'semgrep-report.json', fingerprint: true
+
+                script {
+                    def report = readJSON file: 'semgrep-report.json'
+
+                    def findings = report.results ?: []
+
+                    def summary = ""
+                    summary += "Tool: Semgrep\n"
+                    summary += "Findings: ${findings.size()}\n\n"
+
+                    findings.take(10).each { finding ->
+                        def severity = finding.extra?.severity ?: 'UNKNOWN'
+                        def message = finding.extra?.message ?: 'No message'
+                        def path = finding.path ?: 'Unknown file'
+                        def line = finding.start?.line ?: '?'
+                        def ruleId = finding.check_id ?: 'Unknown rule'
+
+                        summary += "- ${severity}: ${ruleId}\n"
+                        summary += "  ${message}\n"
+                        summary += "  File: ${path}:${line}\n\n"
+                    }
+
+                    if (findings.size() > 10) {
+                        summary += "\n...and ${findings.size() - 10} more."
+                    }
+
+                    publishChecks(
+                        name: 'Semgrep SAST',
+                        title: 'Static Application Security Testing',
+                        summary: summary.toString(),
+                        conclusion: findings.isEmpty() ? 'SUCCESS' : 'FAILURE',
+                        detailsURL: env.BUILD_URL
+                    )
+
+                    if (!findings.isEmpty()) {
+                        error "Semgrep found ${findings.size()} SAST finding(s)."
+                    }
+                }
             }
 
-            script {
-                def report = readJSON file: 'semgrep-report.json'
-
-                def findings = report.results ?: []
-
-                def summary = ""
-                summary += "Tool: Semgrep\n"
-                summary += "Findings: ${findings.size()}\n\n"
-
-                findings.take(10).each { finding ->
-                    def severity = finding.extra?.severity ?: 'UNKNOWN'
-                    def message = finding.extra?.message ?: 'No message'
-                    def path = finding.path ?: 'Unknown file'
-                    def line = finding.start?.line ?: '?'
-                    def ruleId = finding.check_id ?: 'Unknown rule'
-
-                    summary += "- ${severity}: ${ruleId}\n"
-                    summary += "  ${message}\n"
-                    summary += "  File: ${path}:${line}\n\n"
-                }
-
-                if (findings.size() > 10) {
-                    summary += "\n...and ${findings.size() - 10} more."
-                }
-
-                publishChecks(
-                    name: 'Semgrep SAST',
-                    title: 'Static Application Security Testing',
-                    summary: summary.toString(),
-                    conclusion: findings.isEmpty() ? 'SUCCESS' : 'FAILURE',
-                    detailsURL: env.BUILD_URL
-                )
-
-                if (!findings.isEmpty()) {
-                    error "Semgrep found ${findings.size()} SAST finding(s)."
-                }
-            }
+            
         }
 
         stage('CI - Generate SBOM') {
