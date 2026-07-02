@@ -92,7 +92,7 @@ pipeline{
             steps {
                 sh '''
                     echo "Generating SBOM using Trivy..."
-                    trivy fs --format cyclonedx --output sbom.json
+                    trivy fs --format cyclonedx --output sbom.json .
                 '''
                 archiveArtifacts artifacts: 'sbom.json', fingerprint: true
             }
